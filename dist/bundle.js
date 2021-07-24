@@ -361,18 +361,18 @@ var executeTask = function executeTask(fiber) {
 
   if (fiber.child) {
     return fiber.child;
-  } else if (fiber.sibling) {
-    return fiber.sibling;
-  } else {
-    var parent = fiber.parent;
+  }
 
-    while (parent && !parent.sibling) {
-      parent = parent.parent;
+  var currentExecutelyFiber = fiber;
+
+  while (currentExecutelyFiber.parent) {
+    currentExecutelyFiber.parent.effects = currentExecutelyFiber.parent.effects.concat(currentExecutelyFiber.effects.concat([currentExecutelyFiber]));
+
+    if (currentExecutelyFiber.sibling) {
+      return currentExecutelyFiber.sibling;
     }
 
-    if (parent) {
-      return parent.sibling;
-    }
+    currentExecutelyFiber = currentExecutelyFiber.parent;
   }
 };
 
