@@ -2,6 +2,24 @@ export default function updateNodeElement(newElement, virtualDOM, oldVirtualDOM)
   const newProps = virtualDOM.props || {}
   const oldProps = (oldVirtualDOM && oldVirtualDOM.props) || {}
 
+  if (virtualDOM.type === 'text') {
+    // 文本节点
+    if (newProps.textContent !== oldProps.textContent) {
+      if (virtualDOM.parent.type !== oldVirtualDOM.parent.type) {
+        virtualDOM.parent.stateNode.appendChild(
+          document.createTextNode(newProps.textContent)
+        )
+      } else {
+        virtualDOM.parent.stateNode.replaceChild(
+          document.createTextNode(newProps.textContent),
+          oldVirtualDOM.stateNode
+        )
+      }
+    }
+
+    return
+  }
+
   Object.keys(newProps).forEach(propName => {
     const newPropValue = newProps[propName]
     const oldPropValue = oldProps[propName]

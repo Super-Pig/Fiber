@@ -12,7 +12,6 @@ render(jsx, root)
 setTimeout(()=>{
   render(<div>
     <p>garry</p>
-    <p>peng</p>
   </div>, root)
 }, 2000)
 
