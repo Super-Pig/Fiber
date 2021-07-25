@@ -1,4 +1,5 @@
 import { createTaskQueue, arrified, createStateNode, getTag } from "../Misc"
+import { EffectTag, Tag } from '../constants'
 
 const taskQueue = createTaskQueue()
 let subTask = null
@@ -6,8 +7,17 @@ let pendingCommit = null
 
 const commitAllWork = fiber => {
   fiber.effects.forEach(item => {
-    if(item.effectTag === 'placement') {
-      item.parent.stateNode.appendChild(item.stateNode)      
+    if (item.effectTag === EffectTag.Placement) {
+      let fiber = item
+      let parentFiber = item.parent
+
+      while (parentFiber.tag === Tag.ClassComponent) {
+        parentFiber = parentFiber.parent
+      }
+
+      if (fiber.tag === Tag.HostComponent) {
+        parentFiber.stateNode.appendChild(fiber.stateNode)
+      }
     }
   })
 }
@@ -20,7 +30,7 @@ const getFirstTask = () => {
   return {
     props: task.props,
     stateNode: task.dom,
-    tag: 'host_root',
+    tag: Tag.HostRoot,
     effects: [],
     child: null
   }
@@ -45,7 +55,7 @@ const reconcileChildren = (fiber, children) => {
       props: element.props,
       tag: getTag(element),
       effects: [],
-      effectTag: 'placement',
+      effectTag: EffectTag.Placement,
       stateNode: null,
       parent: fiber
     }
@@ -67,7 +77,12 @@ const reconcileChildren = (fiber, children) => {
 }
 
 const executeTask = fiber => {
-  reconcileChildren(fiber, fiber.props.children)
+  // 构建子级 fiber 对象
+  if (fiber.tag === Tag.ClassComponent) {
+    reconcileChildren(fiber, fiber.stateNode.render())
+  } else {
+    reconcileChildren(fiber, fiber.props.children)
+  }
 
   if (fiber.child) {
     return fiber.child
@@ -100,6 +115,8 @@ const workloop = deadline => {
   while (subTask && deadline.timeRemaining() > 1) {
     subTask = executeTask(subTask)
   }
+
+  console.log(pendingCommit)
 
   if (pendingCommit) {
     commitAllWork(pendingCommit)
