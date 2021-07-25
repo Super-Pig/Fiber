@@ -11,7 +11,7 @@ const commitAllWork = fiber => {
       let fiber = item
       let parentFiber = item.parent
 
-      while (parentFiber.tag === Tag.ClassComponent) {
+      while (parentFiber.tag === Tag.ClassComponent || parentFiber.tag === Tag.FunctionComponent) {
         parentFiber = parentFiber.parent
       }
 
@@ -80,6 +80,8 @@ const executeTask = fiber => {
   // 构建子级 fiber 对象
   if (fiber.tag === Tag.ClassComponent) {
     reconcileChildren(fiber, fiber.stateNode.render())
+  } else if (fiber.tag === Tag.FunctionComponent) {
+    reconcileChildren(fiber, fiber.stateNode(fiber.props))
   } else {
     reconcileChildren(fiber, fiber.props.children)
   }
@@ -115,8 +117,6 @@ const workloop = deadline => {
   while (subTask && deadline.timeRemaining() > 1) {
     subTask = executeTask(subTask)
   }
-
-  console.log(pendingCommit)
 
   if (pendingCommit) {
     commitAllWork(pendingCommit)
