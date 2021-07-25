@@ -1,4 +1,4 @@
-import { createTaskQueue, arrified, createStateNode, getTag } from "../Misc"
+import { createTaskQueue, arrified, createStateNode, getTag, getRoot } from "../Misc"
 import { EffectTag, Tag } from '../constants'
 import { updateNodeElement } from "../DOM"
 
@@ -7,10 +7,11 @@ let subTask = null
 let pendingCommit = null
 
 const commitAllWork = fiber => {
-  console.log(fiber)
-
-
   fiber.effects.forEach(item => {
+    if (item.tag === Tag.ClassComponent) {
+      item.stateNode.__fiber = item
+    }
+
     if (item.effectTag === EffectTag.Delete) {
       item.parent.stateNode.removeChild(item.stateNode)
     } else if (item.effectTag === EffectTag.Update) {
@@ -43,6 +44,21 @@ const commitAllWork = fiber => {
 const getFirstTask = () => {
   // 从任务队列中获取任务
   const task = taskQueue.pop()
+
+  if (task.from === Tag.ClassComponent) {
+    const root = getRoot(task.instance)
+
+    task.instance.__fiber.partialState = task.partialState
+
+    return {
+      props: root.props,
+      stateNode: root.stateNode,
+      tag: Tag.HostRoot,
+      effects: [],
+      child: null,
+      alternate: root
+    }
+  }
 
   // 返回最外层节点的 fiber 对象
   return {
@@ -136,6 +152,13 @@ const reconcileChildren = (fiber, children) => {
 const executeTask = fiber => {
   // 构建子级 fiber 对象
   if (fiber.tag === Tag.ClassComponent) {
+    if (fiber.stateNode.__fiber && fiber.stateNode.__fiber.partialState) {
+      fiber.stateNode.state = {
+        ...fiber.stateNode.state,
+        ...fiber.stateNode.__fiber.partialState
+      }
+    }
+
     reconcileChildren(fiber, fiber.stateNode.render())
   } else if (fiber.tag === Tag.FunctionComponent) {
     reconcileChildren(fiber, fiber.stateNode(fiber.props))
@@ -206,6 +229,16 @@ export const render = (element, dom) => {
     props: {
       children: element
     }
+  })
+
+  requestIdleCallback(performTask)
+}
+
+export const scheduleUpdate = (instance, partialState) => {
+  taskQueue.push({
+    from: Tag.ClassComponent,
+    instance,
+    partialState
   })
 
   requestIdleCallback(performTask)
