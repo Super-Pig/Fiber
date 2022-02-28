@@ -200,6 +200,8 @@ const workloop = deadline => {
 
   if (pendingCommit) {
     commitAllWork(pendingCommit)
+
+    pendingCommit = null
   }
 }
 
