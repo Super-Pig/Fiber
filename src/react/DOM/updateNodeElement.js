@@ -5,13 +5,15 @@ export default function updateNodeElement(newElement, virtualDOM, oldVirtualDOM)
   if (virtualDOM.type === 'text') {
     // 文本节点
     if (newProps.textContent !== oldProps.textContent) {
+      virtualDOM.stateNode = document.createTextNode(newProps.textContent)
+
       if (virtualDOM.parent.type !== oldVirtualDOM.parent.type) {
         virtualDOM.parent.stateNode.appendChild(
-          document.createTextNode(newProps.textContent)
+          virtualDOM.stateNode
         )
       } else {
         virtualDOM.parent.stateNode.replaceChild(
-          document.createTextNode(newProps.textContent),
+          virtualDOM.stateNode,
           oldVirtualDOM.stateNode
         )
       }

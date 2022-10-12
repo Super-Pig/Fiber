@@ -176,7 +176,7 @@ const executeTask = fiber => {
     currentExecutelyFiber.parent.effects = currentExecutelyFiber.parent.effects.concat(
       currentExecutelyFiber.effects.concat([currentExecutelyFiber])
     )
-
+ 
     if (currentExecutelyFiber.sibling) {
       return currentExecutelyFiber.sibling
     }
